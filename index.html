@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0d10">
+<title>美颜相机</title>
+<style>
+:root{--ac:#2ee6c5;--bg:#0b0d10;--pa:#171b21;--ln:#2a313a;--mu:#8b96a3}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:#fff;font:15px/1.5 -apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;overflow:hidden}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+#app{height:calc(100dvh - var(--tab,0px));display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+#top{display:flex;justify-content:space-between;padding:6px 10px;gap:6px}
+#top button{background:var(--pa);border-radius:99px;padding:6px 14px;font-size:14px}
+#top button.on{background:var(--ac);color:#04231e}
+#view{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#cw{position:relative;flex:none}#cv{display:block;border-radius:6px;background:#000}
+#cw.g::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(#fff5,#fff5) 33.33% 0/1px 100% no-repeat,linear-gradient(#fff5,#fff5) 66.66% 0/1px 100% no-repeat,linear-gradient(#fff5,#fff5) 0 33.33%/100% 1px no-repeat,linear-gradient(#fff5,#fff5) 0 66.66%/100% 1px no-repeat}
+#cd{position:absolute;inset:0;display:grid;place-items:center;font-size:96px;font-weight:700;text-shadow:0 2px 12px #0008;pointer-events:none}
+#fl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+#msg{position:absolute;left:16px;right:16px;top:30%;text-align:center;background:#000b;border-radius:16px;padding:18px;z-index:5}
+#msg button{margin-top:12px;background:var(--ac);color:#04231e;border-radius:99px;padding:8px 20px}
+#panel{background:var(--pa);border-radius:18px 18px 0 0;padding:8px 12px 4px}
+.tabs{display:flex;gap:16px;align-items:center;margin-bottom:6px}.tabs button{color:var(--mu);font-size:15px;padding:2px 0}.tabs button.on{color:#fff;border-bottom:2px solid var(--ac)}
+.tabs .sp{flex:1}.tabs .mini{font-size:13px;color:var(--ac)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px}
+.chips button{flex:none;background:#0006;border:1px solid var(--ln);border-radius:99px;padding:4px 14px;font-size:14px;white-space:nowrap}
+.chips button.on{background:var(--ac);border-color:var(--ac);color:#04231e}
+.sl{display:flex;align-items:center;gap:10px;padding:2px 2px 6px}.sl input{flex:1;accent-color:var(--ac)}.sl output{width:2.6em;text-align:right;font-size:14px}
+#bot{display:flex;align-items:center;justify-content:space-around;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--pa)}
+#thumb{width:52px;height:52px;border-radius:12px;background:#000 center/cover;border:2px solid var(--ln)}
+#shut{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid var(--ac);box-shadow:0 0 0 3px #fff3}#shut:active{transform:scale(.92)}
+#cmp{width:64px;font-size:13px;color:var(--mu);user-select:none;-webkit-user-select:none;touch-action:none}
+#gal{position:fixed;inset:0;background:var(--bg);z-index:30;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+#gal[hidden],#vw[hidden],#msg[hidden]{display:none}
+#gh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px}
+#gg{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;align-content:start;padding:0 3px calc(8px + env(safe-area-inset-bottom))}
+#gg div{aspect-ratio:1;background:center/cover #222}
+#vw{position:fixed;inset:0;background:#000;z-index:40;display:flex;flex-direction:column;align-items:center;padding-top:env(safe-area-inset-top)}
+#vw img{flex:1;min-height:0;max-width:100%;object-fit:contain}
+#vb{display:flex;gap:10px;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}#vb button{background:var(--pa);border-radius:99px;padding:8px 18px}#vb .pri{background:var(--ac);color:#04231e}
+#tt{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:#000c;padding:8px 16px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60;max-width:90vw;text-align:center}#tt.on{opacity:1}
+ #top{overflow-x:auto;scrollbar-width:none}#top button{flex:none;white-space:nowrap}
+.tabs{gap:12px}.chips button.on{font-weight:600}
+#view{transition:background .2s}#view.lit{padding:26px}
+#mode{display:flex;justify-content:center;gap:28px;background:var(--pa);padding:6px 0 0}#mode button{color:var(--mu);font-size:15px;padding:2px 6px}#mode .on{color:var(--ac);font-weight:600}
+#shut.vd{background:#e5233d;border-color:#fff}#shut.rc{border-radius:20px;transform:scale(.78)}
+#rec{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#e5233d;border-radius:99px;padding:1px 12px;font-size:14px;font-weight:600;z-index:3}
+#tp{position:absolute;left:0;right:0;top:0;overflow:hidden;border-radius:6px 6px 0 0;touch-action:none;z-index:2}
+#tpt{position:absolute;left:0;right:0;padding:0 18px;line-height:1.55;font-weight:600;white-space:pre-wrap;text-align:center;will-change:transform;pointer-events:none}
+#tpl{position:absolute;left:0;right:0;top:38%;border-top:2px solid var(--ac);opacity:.85;pointer-events:none}
+#tpl::before{content:"▶";position:absolute;left:3px;top:-12px;color:var(--ac);font-size:13px}
+#tpc{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:6px;padding:14px 6px 6px;background:linear-gradient(#0000,#000b)}
+#tpc button{background:#000a;border-radius:99px;padding:3px 12px;font-size:13px}
+#tp[hidden],#rec[hidden],#ted[hidden]{display:none}
+#ted{position:fixed;inset:0;background:var(--bg);z-index:35;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));gap:10px}
+#ted textarea{flex:1;background:var(--pa);color:#fff;border:1px solid var(--ln);border-radius:12px;padding:12px;font:inherit;font-size:17px;resize:none}
+#ted button{background:var(--ac);color:#04231e;border-radius:99px;padding:10px;font-weight:600}
+#gg div{position:relative}#gg i{position:absolute;right:6px;bottom:3px;font-style:normal;font-size:18px;text-shadow:0 1px 4px #000}
+#vw video{flex:1;min-height:0;max-width:100%}#vw video[hidden],#vw img[hidden]{display:none}
+html,body{overscroll-behavior:none;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#view{touch-action:none}
+#gd{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#hint,#tipb{position:absolute;left:8px;right:8px;text-align:center;border-radius:10px;padding:3px 10px;font-size:13px;pointer-events:none;z-index:2;background:#000a}
+#tipb{top:8px;color:var(--ac)}#hint{top:40px;color:#ffd166}#hint.ok{color:#7dffb0}#hint[hidden],#tipb[hidden],#lvl[hidden]{display:none}
+#lvl{position:absolute;left:0;right:0;top:50%;display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:2}
+#lvl i{display:block;width:62%;height:2px;background:#fff;box-shadow:0 0 4px #000}#lvl.ok i{background:#7dffb0}#lvl b{font-size:12px;font-weight:600;text-shadow:0 1px 3px #000;margin-top:6px}
+#zm{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:#0009;border-radius:99px;padding:3px;z-index:3}
+#zm button{width:34px;height:28px;border-radius:99px;font-size:13px}#zm button.on{background:var(--ac);color:#04231e}
+.tabs{overflow-x:auto;scrollbar-width:none}.tabs button{flex:none;white-space:nowrap}
+#mode{overflow-x:auto;scrollbar-width:none;gap:22px}#mode button{flex:none}
+#fr{position:absolute;width:60px;height:60px;border:2px solid #ffd166;border-radius:8px;pointer-events:none;z-index:3;opacity:0}
+#fr.go{animation:fr .9s ease-out}@keyframes fr{0%{opacity:1;transform:scale(1.4)}20%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+#cl{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#000b;border-radius:99px;padding:2px 6px 2px 14px;font-size:14px;z-index:3;white-space:nowrap}#cl[hidden]{display:none}
+#cl button{background:var(--ac);color:#04231e;border-radius:99px;padding:1px 10px;margin-left:6px;font-size:13px}
+#gg div.sel{outline:3px solid var(--ac);outline-offset:-3px}#gh span button{margin-left:6px;background:var(--pa);border-radius:99px;padding:4px 14px}
+#gbar{display:flex;gap:10px;padding:0 14px 8px}#gbar[hidden]{display:none}#gbar button{background:var(--pa);border-radius:99px;padding:6px 16px}
+.chips button i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.sl[hidden]{display:none}
+</style></head><body>
+<div id="app">
+ <div id="top"><button id="ratio">3:4</button><button id="grid">网格</button><button id="timer">定时 关</button><button id="mir" class="on">镜像</button><button id="fillb">补光</button><button id="tpb">提词</button><button id="snd" class="on">声音</button><button id="flip">切换镜头</button></div>
+ <div id="view"><div id="cw"><canvas id="cv"></canvas><div id="cd"></div><div id="fl"></div><svg id="gd" xmlns="http://www.w3.org/2000/svg"></svg><div id="tipb" hidden></div><div id="hint" hidden></div><div id="lvl" hidden><i></i><b></b></div><div id="zm"><button data-z="1" class="on">1x</button><button data-z="2">2x</button><button data-z="3">3x</button></div><div id="fr"></div><div id="cl" hidden></div><div id="rec" hidden>● 00:00</div>
+  <div id="tp" hidden><div id="tpt"></div><div id="tpl"></div><div id="tpc"><button data-c="r">⏮ 回开头</button><button data-c="p" id="tpp">开始</button><button data-c="-">慢</button><button data-c="+">快</button><button data-c="x">收起</button></div></div>
+ </div></div>
+ <div id="msg" hidden></div>
+ <div id="panel">
+  <div class="tabs"><button data-t="b" class="on">美颜</button><button data-t="f">滤镜</button><button data-t="l">补光</button><button data-t="t">提词</button><button data-t="g">引导</button><button data-t="m">更多</button><span class="sp"></span><span id="ex"></span></div>
+  <div class="chips" id="chips"></div>
+  <div class="sl" id="sl"><input type="range" id="rg"><output id="ro"></output></div>
+ </div>
+ <div id="mode"><button data-m="p" class="on">拍照</button><button data-m="v">视频</button><button data-m="r">人像</button><button data-m="n">夜景</button><button data-m="f">美食</button><button data-m="c">拼图</button></div>
+ <div id="bot"><button id="thumb" aria-label="相册"></button><button id="shut" aria-label="拍照"></button><button id="cmp">按住<br>看原图</button></div>
+</div>
+<div id="gal" hidden><div id="gh"><b>我的照片</b><span><button id="gs">选择</button><button id="gx">关闭</button></span></div><div id="gbar" hidden><button id="gsv">分享所选</button><button id="gdl">删除所选</button></div><div id="gg"></div></div>
+<div id="vw" hidden><img alt=""><video id="vv" controls playsinline hidden></video><div id="vb"><button class="pri" id="vs">保存到相册</button><button id="vd">下载</button><button id="vr">删除</button><button id="vc">返回</button></div></div>
+<div id="ted" hidden><b>提词稿</b><textarea id="tex" placeholder="在这里输入或粘贴台词。拍视频时，文字会自动向上滚动，你看着镜头附近的文字念就行。"></textarea><button id="tok">完成</button></div>
+<div id="tt"></div>
+<video id="vid" playsinline muted autoplay style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none"></video>
+<script>
+const $=s=>document.querySelector(s);
+let tt;function toast(m){const e=$('#tt');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),2400)}
+/* ---------- 设置 ---------- */
+const D={ct:0,q:1080,fr:0,tim:false,txt:'',burst:true,voice:false,tpm:false,cl:'2x2',snd:true,bk:0,gd:-1,auto:true,lvl:false,fc:0,fb:100,tps:40,tpz:34,tpb:55,tph:46,tpa:true,tpx:'',sm:35,wh:20,ro:15,sh:15,br:0,co:0,sa:0,f:0,fa:70,ratio:'3:4',facing:'user',mir:true,grid:0,timer:0};
+let S=Object.assign({},D);try{Object.assign(S,JSON.parse(localStorage.getItem('cam_cfg')||'{}'))}catch(e){}
+if(typeof S.grid!=='number')S.grid=S.grid?1:0;S.lvl=false;
+const save=()=>{try{localStorage.setItem('cam_cfg',JSON.stringify(S))}catch(e){}};
+const BP=[['sm','磨皮',0,100],['wh','美白',0,100],['ro','红润',0,100],['sh','清晰',0,100],['bk','背景虚化',0,100],['ct','色温',-50,50],['br','亮度',-50,50],['co','对比',-50,50],['sa','饱和',-50,50]];
+/* 滤镜：对比度, 饱和度, 亮度, 褪色, 色调RGB, 暗部色RGB, 暗角, 黑白 */
+const FL=[['原图'],['自然',1.05,1.08,.02,0,[1,1,1],[0,0,0],0,0],['清透',1,1.15,.06,.02,[.98,1.02,1.04],[0,0,0],0,0],['日系',.9,.85,.07,.07,[1,1.02,1.03],[0,.01,.02],0,0],['奶油',.92,1,.06,.06,[1.03,1,.95],[0,0,0],0,0],['粉嫩',.95,1.1,.07,.04,[1.05,.97,1],[0,0,0],0,0],['暖阳',1.05,1.15,.03,.02,[1.08,1,.9],[0,0,0],0,0],['冷调',1.05,.95,0,.02,[.92,.99,1.08],[0,0,0],0,0],['复古',1.1,.8,-.02,.08,[1.06,.98,.86],[0,0,0],.25,0],['胶片',1.12,.9,0,.05,[1.04,1,.92],[.02,.01,0],.2,0],['电影',1.2,.85,-.03,.03,[.96,1,1.06],[0,.015,.03],.3,0],['黑白',1.15,0,0,.02,[1,1,1],[0,0,0],.15,1]];
+const PRE={'自然':{sm:35,wh:20,ro:15,sh:15,br:0,sa:0},'精致':{sm:60,wh:35,ro:20,sh:25,br:5,sa:5},'清新':{sm:40,wh:45,ro:10,sh:10,br:10,sa:10}};
+/* ---------- WebGL ---------- */
+const VS='attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
+const FS=`precision highp float;varying vec2 v;uniform sampler2D t;uniform vec2 px;uniform vec4 cr;uniform float mir,rs,sm,wh,ro,sh,br,co,sa,fam,vg,bw,bk,ct;uniform vec4 fa;uniform vec3 ft,fs;
+vec3 S(vec2 u){return texture2D(t,u).rgb;}
+float skin(vec3 c){float y=dot(c,vec3(.299,.587,.114)),cb=-.168736*c.r-.331264*c.g+.5*c.b,cr=.5*c.r-.418688*c.g-.081312*c.b;
+ float a=smoothstep(-.23,-.19,cb)*(1.-smoothstep(-.02,.01,cb)),b=smoothstep(0.,.04,cr)*(1.-smoothstep(.17,.21,cr));return a*b*smoothstep(.12,.25,y);}
+void main(){
+ vec2 u=vec2(mir>.5?1.-v.x:v.x,v.y),uv=u*cr.xy+cr.zw;vec3 c=S(uv),o=c;float m=skin(c);
+ if(sm>0.){vec3 acc=c;float ws=1.,R=(2.+sm*3.)*rs;
+  for(int i=0;i<12;i++){float a=float(i)*2.39996,r=sqrt((float(i)+.5)/12.)*R;vec3 n=S(uv+vec2(cos(a),sin(a))*r*px),d=n-c;float w=exp(-dot(d,d)*60.);acc+=n*w;ws+=w;}
+  o=mix(c,acc/ws,sm*m*.92);}
+ if(wh>0.)o=mix(o,vec3(1.),wh*m*.3);
+ if(ro>0.)o+=vec3(.055,-.012,-.004)*ro*m;
+ if(sh>0.){vec3 b=(S(uv+vec2(px.x,0.))+S(uv-vec2(px.x,0.))+S(uv+vec2(0.,px.y))+S(uv-vec2(0.,px.y)))*.25;o+=(c-b)*sh*1.5;}
+ if(bk>0.){vec3 bl=c;float R2=(8.+bk*24.)*rs;for(int i=0;i<12;i++){float a=float(i)*2.39996,r=sqrt((float(i)+.5)/12.)*R2;bl+=S(uv+vec2(cos(a),sin(a))*r*px);}bl/=13.;
+  float d=length((v-vec2(.5,.46))/vec2(.42,.55)),fg=1.-smoothstep(.75,1.15,d);o=mix(o,bl,bk*(1.-fg));}
+ o+=vec3(ct*.09,ct*.018,-ct*.09);
+ o+=br*.25;o=(o-.5)*(1.+co*.5)+.5;float l=dot(o,vec3(.299,.587,.114));o=mix(vec3(l),o,1.+sa*.8);
+ if(fam>0.){vec3 g=(o-.5)*fa.x+.5;float gl=dot(g,vec3(.299,.587,.114));g=mix(vec3(gl),g,fa.y);g+=fa.z;g=g*(1.-fa.w)+fa.w;g*=ft;g+=fs*(1.-gl)*(1.-gl);
+  if(bw>.5){float k=dot(g,vec3(.299,.587,.114));g=vec3(k);}
+  vec2 q=v-.5;g*=1.-vg*dot(q,q)*2.2;o=mix(o,g,fam);}
+ gl_FragColor=vec4(clamp(o,0.,1.),1.);}`;
+const cv=$('#cv'),gl=cv.getContext('webgl',{preserveDrawingBuffer:true,antialias:false}),vid=$('#vid');
+let U={},ready=false;
+function initGL(){
+ if(!gl)throw new Error('这个浏览器不支持 WebGL，无法使用美颜相机');
+ const mk=(ty,src)=>{const s=gl.createShader(ty);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s};
+ const pr=gl.createProgram();gl.attachShader(pr,mk(gl.VERTEX_SHADER,VS));gl.attachShader(pr,mk(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);gl.useProgram(pr);
+ const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+ const a=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);
+ ['t','px','cr','mir','rs','bk','ct','sm','wh','ro','sh','br','co','sa','fam','vg','bw','fa','ft','fs'].forEach(n=>U[n]=gl.getUniformLocation(pr,n));
+ const tx=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tx);
+ [[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE],[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR]].forEach(([k,x])=>gl.texParameteri(gl.TEXTURE_2D,k,x));
+ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.uniform1i(U.t,0);ready=true}
+let bypass=false;
+function draw(){
+ if(!ready||vid.readyState<2||!vid.videoWidth)return false;
+ const vw=vid.videoWidth,vh=vid.videoHeight,[rw,rh]=S.ratio==='full'?[vw,vh]:S.ratio.split(':').map(Number),a=rw/rh,va=vw/vh;
+ let sx=1,sy=1;if(va>a)sx=a/va;else sy=va/a;sx/=zoom;sy/=zoom;CRP={cx:(1-sx)/2*vw,cy:(1-sy)/2*vh,cw:sx*vw,ch:sy*vh};
+ const L=Math.min(S.q||1080,Math.max(vw,vh)),ow=Math.round(a>=1?L:L*a),oh=Math.round(a>=1?L/a:L);
+ if(cv.width!==ow||cv.height!==oh){cv.width=ow;cv.height=oh;fit()}
+ gl.viewport(0,0,ow,oh);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,vid);
+ const E=eff(),f=FL[S.f],on=!bypass,k=v=>on?v/100:0;
+ gl.uniform2f(U.px,1/vw,1/vh);gl.uniform4f(U.cr,sx,sy,(1-sx)/2,(1-sy)/2);gl.uniform1f(U.mir,S.mir?1:0);gl.uniform1f(U.rs,Math.min(vw,vh)/720);
+ gl.uniform1f(U.sm,k(E.sm));gl.uniform1f(U.wh,k(E.wh));gl.uniform1f(U.ro,k(E.ro));gl.uniform1f(U.sh,k(E.sh));gl.uniform1f(U.bk,k(E.bk));gl.uniform1f(U.ct,on?E.ct/50:0);
+ gl.uniform1f(U.br,on?E.br/50:0);gl.uniform1f(U.co,on?E.co/50:0);gl.uniform1f(U.sa,on?E.sa/50:0);
+ gl.uniform1f(U.fam,on&&S.f?S.fa/100:0);
+ if(f.length>1){gl.uniform4f(U.fa,f[1],f[2],f[3],f[4]);gl.uniform3fv(U.ft,f[5]);gl.uniform3fv(U.fs,f[6]);gl.uniform1f(U.vg,f[7]);gl.uniform1f(U.bw,f[8])}
+ gl.drawArrays(gl.TRIANGLE_STRIP,0,4);return true}
+function fit(){const v=$('#view'),cs=getComputedStyle(v),pw=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),ph=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom),s=Math.min((v.clientWidth-pw)/cv.width,(v.clientHeight-ph)/cv.height);cv.style.width=Math.floor(cv.width*s)+'px';cv.style.height=Math.floor(cv.height*s)+'px';tpLayout();gdr()}
+addEventListener('resize',fit);
+function loop(){draw();vid.requestVideoFrameCallback?vid.requestVideoFrameCallback(loop):requestAnimationFrame(loop)}
+/* ---------- 相机 ---------- */
+let stream=null,starting=false;
+function msg(h,btn){const m=$('#msg');if(!h){m.hidden=true;return}m.innerHTML=h+(btn?'<br><button id="mb">'+btn+'</button>':'');m.hidden=false;const b=$('#mb');if(b)b.onclick=start}
+async function start(){
+ if(starting)return;starting=true;stop();msg('');
+ try{
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Object.assign(new Error('insecure'),{name:'Insecure'});
+  const port=innerHeight>innerWidth;
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:S.facing},width:{ideal:port?1080:1920},height:{ideal:port?1920:1080}}});
+  vid.srcObject=stream;await vid.play();if(!ready){initGL();loop()}fillApply();wake()
+ }catch(e){
+  const n=e&&e.name;
+  msg(n==='NotAllowedError'||n==='SecurityError'?(/iP(hone|ad)/.test(navigator.userAgent)?'没有相机权限。苹果手机：点地址栏左边的“aA”→“网站设置”→相机选“允许”（或到“设置”→Safari→相机），然后点重试。':'没有相机权限。安卓手机：点地址栏左边的锁图标→“权限”→相机选“允许”，然后点重试。'):n==='NotFoundError'||n==='OverconstrainedError'?'没有找到可用的相机。':n==='Insecure'?'相机只能在 https 网址下使用。本地文件和部分内置浏览器打不开相机，请把页面放到你的域名下再打开。':'相机启动失败：'+(e&&e.message||'未知原因'),n==='Insecure'?'':'重试')}
+ starting=false}
+function stop(){if(rec)recStop();if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}if(wl){wl.release().catch(()=>{});wl=null}}
+document.addEventListener('visibilitychange',()=>document.hidden?stop():start());
+addEventListener('message',e=>{const d=e.data;if(d&&d.cam==='stop')stop();if(d&&d.cam==='start')start()});
+$('#flip').onclick=()=>{if(rec)return toast('录制中不能切换镜头');S.facing=S.facing==='user'?'environment':'user';S.mir=S.facing==='user';$('#mir').classList.toggle('on',S.mir);save();start()};
+/* ---------- 顶部按钮 ---------- */
+const RT=['3:4','9:16','1:1','full'],RN={'3:4':'3:4','9:16':'9:16','1:1':'1:1','full':'全屏'},TM=[0,3,10];
+const GN=['网格','九宫格','对角线','黄金分割','十字线'];
+function topbar(){$('#ratio').textContent=RN[S.ratio];$('#grid').textContent=GN[S.grid];$('#grid').classList.toggle('on',S.grid>0);$('#timer').textContent='定时 '+(S.timer?S.timer+'秒':'关');$('#timer').classList.toggle('on',!!S.timer);$('#mir').classList.toggle('on',S.mir);$('#snd').classList.toggle('on',S.snd);gdr()}
+$('#ratio').onclick=()=>{if(rec)return toast('录制中不能切换比例');if(cells.length)return toast('拼图进行中不能切换比例');S.ratio=RT[(RT.indexOf(S.ratio)+1)%RT.length];save();topbar()};
+$('#grid').onclick=()=>{S.grid=(S.grid+1)%GN.length;save();topbar()};
+$('#snd').onclick=()=>{S.snd=!S.snd;save();topbar();if(S.snd)beep(880,.08)};
+$('#timer').onclick=()=>{S.timer=TM[(TM.indexOf(S.timer)+1)%TM.length];save();topbar()};
+$('#mir').onclick=()=>{S.mir=!S.mir;save();topbar()};
+/* ---------- 面板：美颜 / 滤镜 ---------- */
+let pt='b',sel='sm',stp='tps',fillOn=false;
+const TPP=[['tps','速度',5,200],['tpz','字号',16,72],['tpb','背景',0,90],['tph','高度',20,80]],FCN=['白光','暖光','柔粉','冷光'];
+function panel(){
+ [...document.querySelectorAll('.tabs button')].forEach(b=>b.classList.toggle('on',b.dataset.t===pt));
+ const set=(a,z,v)=>{$('#rg').min=a;$('#rg').max=z;$('#rg').value=v;$('#ro').textContent=v};$('#ex').innerHTML='';$('#sl').hidden=false;
+ if(pt==='b'){
+  $('#ex').innerHTML='<button class="mini" data-x="n">一键美颜</button> <button class="mini" data-x="0">归零</button>';
+  $('#chips').innerHTML=Object.keys(PRE).map(k=>`<button data-pre="${k}">${k}</button>`).join('')+BP.map(([k,n])=>`<button data-k="${k}" class="${k===sel?'on':''}">${n}${S[k]?' '+S[k]:''}</button>`).join('');
+  const p=BP.find(x=>x[0]===sel);set(p[2],p[3],S[sel])}
+ else if(pt==='f'){
+  $('#chips').innerHTML=FL.map((f,i)=>`<button data-f="${i}" class="${i===S.f?'on':''}"><i style="background:${f.length>1?'rgb('+f[5].map(v=>Math.round(128+(v-1)*420)).join(',')+')':'#888'}"></i>${f[0]}</button>`).join('');set(0,100,S.fa);$('#sl').hidden=!S.f}
+ else if(pt==='l'){
+  $('#chips').innerHTML=`<button data-fill="1" class="${fillOn?'on':''}">${fillOn?'关闭补光':'打开补光'}</button>`+FCN.map((n,i)=>`<button data-fc="${i}" class="${i===S.fc?'on':''}">${n}</button>`).join('');set(30,100,S.fb)}
+ else if(pt==='m'){
+  $('#chips').innerHTML=FRN.map((n,i)=>`<button data-fr="${i}" class="${S.fr===i?'on':''}">相框：${n}</button>`).join('')
+   +`<button data-tm="1" class="${S.tim?'on':''}">时间水印</button><button data-tx="1" class="${S.txt?'on':''}">文字水印${S.txt?'：'+esc(S.txt).slice(0,6):''}</button>`
+   +`<button data-bu="1" class="${S.burst?'on':''}">长按快门连拍</button><button data-vo="1" class="${S.voice?'on':''}">声控拍照（说“茄子”）</button>`
+   +[[720,'流畅'],[1080,'高清'],[1440,'超清']].map(([q,n])=>`<button data-q="${q}" class="${S.q===q?'on':''}">画质：${n}</button>`).join('')
+   +Object.keys(CL).map(k=>`<button data-cl="${k}" class="${S.cl===k?'on':''}">拼图 ${k.replace('x','×')}</button>`).join('')
+   +`<button data-tm2="1" class="${S.tpm?'on':''}">提词器镜像</button>`;$('#sl').hidden=true}
+ else if(pt==='g'){
+  $('#chips').innerHTML=`<button data-gd="-1" class="${S.gd<0?'on':''}">无引导</button>`+PO.map((p,i)=>`<button data-gd="${i}" class="${S.gd===i?'on':''}">${p[0]}</button>`).join('')+`<button data-au="1" class="${S.auto?'on':''}">自动提示</button><button data-lv="1" class="${S.lvl?'on':''}">水平仪</button>`;$('#sl').hidden=true}
+ else{
+  $('#chips').innerHTML=`<button data-te="1">编辑文稿</button><button data-ts="1" class="${tpOn?'on':''}">${tpOn?'隐藏提词器':'显示提词器'}</button><button data-ta="1" class="${S.tpa?'on':''}">录像时自动滚动</button>`+TPP.map(([k,n])=>`<button data-tk="${k}" class="${k===stp?'on':''}">${n} ${S[k]}</button>`).join('');
+  const p=TPP.find(x=>x[0]===stp);set(p[2],p[3],S[stp])}}
+document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.t){pt=b.dataset.t;panel()}
+ else if(b.dataset.x==='n'){Object.assign(S,PRE['自然']);save();panel()}
+ else if(b.dataset.x==='0'){BP.forEach(([k])=>S[k]=0);save();panel()}};
+$('#chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.pre){Object.assign(S,PRE[d.pre]);save()}
+ else if(d.k)sel=d.k;
+ else if(d.f!==undefined){S.f=+d.f;save()}
+ else if(d.fill){fillOn=!fillOn;fillApply(true)}
+ else if(d.fc!==undefined){S.fc=+d.fc;save();fillApply()}
+ else if(d.te){openTed();return}
+ else if(d.ts){tpShow(!tpOn)}
+ else if(d.ta){S.tpa=!S.tpa;save()}
+ else if(d.gd!==undefined){S.gd=+d.gd;save();gdr()}
+ else if(d.au){S.auto=!S.auto;save();if(!S.auto)hintSet('')}
+ else if(d.lv){togLvl();return}
+ else if(d.fr!==undefined){S.fr=+d.fr;save();gdr()}
+ else if(d.tm){S.tim=!S.tim;save()}
+ else if(d.tx){const v=prompt('水印文字（留空表示不加）',S.txt);if(v===null)return;S.txt=v.trim().slice(0,30);save()}
+ else if(d.bu){S.burst=!S.burst;save()}
+ else if(d.vo){S.voice=!S.voice;save();voice(S.voice)}
+ else if(d.q){S.q=+d.q;save();toast('画质已切换')}
+ else if(d.cl){if(cells.length)return toast('拼图进行中，先拍完或撤销');S.cl=d.cl;save();clUI()}
+ else if(d.tm2){S.tpm=!S.tpm;save();tpApply()}
+ else if(d.tk)stp=d.tk;
+ panel()};
+$('#rg').oninput=e=>{const v=+e.target.value;$('#ro').textContent=v;
+ if(pt==='b'){S[sel]=v;const c=$('#chips [data-k="'+sel+'"]'),p=BP.find(x=>x[0]===sel);if(c)c.textContent=p[1]+(v?' '+v:'')}
+ else if(pt==='f')S.fa=v;
+ else if(pt==='l'){S.fb=v;fillApply()}
+ else{S[stp]=v;tpLayout();const c=$('#chips [data-tk="'+stp+'"]'),p=TPP.find(x=>x[0]===stp);if(c)c.textContent=p[1]+' '+v}
+ save()};
+const hold=on=>{bypass=on};
+$('#cmp').onpointerdown=e=>{e.preventDefault();hold(true)};['pointerup','pointercancel','pointerleave'].forEach(n=>$('#cmp').addEventListener(n,()=>hold(false)));
+/* ---------- 拍照与相册 ---------- */
+const DB=new Promise((ok,no)=>{const r=indexedDB.open('camdb',1);r.onupgradeneeded=()=>r.result.createObjectStore('p',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const tx=async(m,f)=>{const d=await DB;return new Promise((ok,no)=>{const t=d.transaction('p',m),r=f(t.objectStore('p'));t.oncomplete=()=>ok(r.result);t.onerror=()=>no(t.error)})};
+let photos=[],cur=null,mode='p',autoR=false,rec=null,recChunks=[],recTick=0,micStream=null,posterData=null,wl=null;
+const pad=n=>String(n).padStart(2,'0');
+const stamp=()=>{const d=new Date();return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`};
+function thumb(){const p=photos[photos.length-1];$('#thumb').style.backgroundImage=p?`url(${p.poster||p.url})`:'none'}
+function poster(){const c=document.createElement('canvas'),k=320/Math.max(cv.width,cv.height);c.width=Math.round(cv.width*k);c.height=Math.round(cv.height*k);c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7)}
+function addMedia(bl,type,ext,po){
+ const t=Date.now(),p={id:t,t,blob:bl,type,poster:po||null,url:URL.createObjectURL(bl),name:(type==='video'?'视频-':'美颜相机-')+stamp()+ext};
+ photos.push(p);thumb();tx('readwrite',s=>s.put({id:p.id,t:p.t,blob:bl,name:p.name,type,poster:p.poster})).catch(()=>toast('没能保存到本机，请及时存到相册'));return p}
+const esc=t=>t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const FRN=['无','拍立得','胶片','圆角'],sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function frameParts(W,H){const f=S.fr,P=[];
+ if(f===1){const t=.045*W,b=.16*W;P.push([`M0 0H${W}V${t}H0ZM0 0H${t}V${H}H0ZM${W-t} 0H${W}V${H}H${W-t}ZM0 ${H-b}H${W}V${H}H0Z`,'#fff'])}
+ else if(f===2){const bw=.075*W;P.push([`M0 0H${bw}V${H}H0ZM${W-bw} 0H${W}V${H}H${W-bw}Z`,'#111']);let d='';const hw=.032*W,hh=.04*H;
+  for(let y=.03*H;y<H-hh;y+=.075*H){d+=`M${.0215*W} ${y}h${hw}v${hh}h${-hw}ZM${W-.0215*W-hw} ${y}h${hw}v${hh}h${-hw}Z`}P.push([d,'#f2f2f2'])}
+ else if(f===3){const r=.07*Math.min(W,H);P.push([`M0 0H${W}V${H}H0ZM${r} 0H${W-r}A${r} ${r} 0 0 1 ${W} ${r}V${H-r}A${r} ${r} 0 0 1 ${W-r} ${H}H${r}A${r} ${r} 0 0 1 0 ${H-r}V${r}A${r} ${r} 0 0 1 ${r} 0Z`,'#fff','evenodd'])}
+ return P}
+function drawMarks(g,w,h,fr){
+ const d=new Date(),ts=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`,fs=Math.round(w*.03);
+ g.save();g.font=`600 ${fs}px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`;g.textBaseline='middle';
+ if(fr===1){g.fillStyle='#444';g.textAlign='center';let y=h-.08*w;if(S.txt&&S.tim){g.fillText(S.txt,w/2,y-fs*.7);g.fillText(ts,w/2,y+fs*.7)}else g.fillText(S.txt||ts,w/2,y)}
+ else{g.shadowColor='rgba(0,0,0,.65)';g.shadowBlur=fs*.3;g.fillStyle='#fff';const mx=(fr===2?.09*w:.025*w),y=h-fs*1.1-(fr===3?.04*w:0);
+  if(S.txt){g.textAlign='left';g.fillText(S.txt,mx,y)}if(S.tim){g.textAlign='right';g.fillText(ts,w-mx,y)}}
+ g.restore()}
+function post(src,fr){if(!(fr&&S.fr)&&!S.tim&&!S.txt)return src;
+ const c=document.createElement('canvas');c.width=src.width;c.height=src.height;const g=c.getContext('2d');g.drawImage(src,0,0);
+ if(fr&&S.fr)frameParts(c.width,c.height).forEach(([d,f,r])=>{g.fillStyle=f;g.fill(new Path2D(d),r||'nonzero')});
+ if(S.tim||S.txt)drawMarks(g,c.width,c.height,fr?S.fr:0);return c}
+const toBlob=(c,q)=>new Promise(r=>c.toBlob(r,'image/jpeg',q||.93));
+async function grab(){
+ if(mode==='n'){toast('夜景拍摄中，请端稳…');const a=document.createElement('canvas');a.width=cv.width;a.height=cv.height;const g=a.getContext('2d');
+  for(let k=0;k<6;k++){await sleep(70);draw();g.globalAlpha=1/(k+1);g.drawImage(cv,0,0)}return a}
+ return cv}
+async function snap(){
+ if(!draw())return toast('相机还没准备好');
+ shutterSound();vibe(18);$('#fl').style.opacity=.85;setTimeout(()=>$('#fl').style.opacity=0,60);
+ const bl=await toBlob(post(await grab(),true));if(!bl)return toast('拍照失败，请重试');addMedia(bl,'photo','.jpg')}
+/* 拼图：连拍几张，自动拼成一张 */
+let cells=[];const CL={'2x2':[2,2],'1x3':[1,3],'3x3':[3,3],'2x1':[2,1]};
+function clUI(){const e=$('#cl');if(mode!=='c'){e.hidden=true;return}const [c,r]=CL[S.cl];e.hidden=false;e.innerHTML=`拼图 ${S.cl.replace('x','×')}　${cells.length}/${c*r}`+(cells.length?'<button data-u="1">撤销上一张</button>':'')}
+$('#cw').addEventListener('click',e=>{if(e.target.dataset&&e.target.dataset.u){cells.pop();clUI()}});
+async function collageShot(){
+ if(!draw())return toast('相机还没准备好');const [c,r]=CL[S.cl];
+ shutterSound();vibe(18);$('#fl').style.opacity=.7;setTimeout(()=>$('#fl').style.opacity=0,60);
+ const k=800/Math.max(cv.width,cv.height),cw=Math.round(cv.width*k),ch=Math.round(cv.height*k),x=document.createElement('canvas');x.width=cw;x.height=ch;x.getContext('2d').drawImage(cv,0,0,cw,ch);cells.push(x);clUI();
+ if(cells.length<c*r)return;
+ const gap=Math.round(cw*.012),out=document.createElement('canvas');out.width=c*cw+(c+1)*gap;out.height=r*ch+(r+1)*gap;const g=out.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,out.width,out.height);
+ cells.forEach((cc,i)=>g.drawImage(cc,gap+(i%c)*(cw+gap),gap+((i/c)|0)*(ch+gap)));cells=[];clUI();
+ const bl=await toBlob(post(out,false));if(bl){addMedia(bl,'photo','.jpg');toast('拼图已保存')}}
+/* 长按快门连拍 */
+let bt=0,burstOn=false;
+$('#shut').addEventListener('pointerdown',()=>{if(!S.burst||['v','n','c'].includes(mode)||rec||cdT)return;
+ bt=setTimeout(async()=>{bt=0;burstOn=true;toast('连拍中…');for(let i=0;i<6;i++){await snap();await sleep(160)}setTimeout(()=>{burstOn=false},400)},500)});
+['pointerup','pointercancel','pointerleave'].forEach(n=>$('#shut').addEventListener(n,()=>{if(bt){clearTimeout(bt);bt=0}}));
+/* 声控拍照：说“茄子”“拍照” */
+let rc=null,vTs=0;
+function voice(on){
+ if(rc){try{rc.onend=null;rc.stop()}catch(e){}rc=null}
+ if(!on)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){S.voice=false;save();return toast('这个浏览器不支持声控拍照')}
+ try{rc=new SR();rc.lang='zh-CN';rc.continuous=true;rc.interimResults=true;
+  rc.onresult=e=>{const t=[...e.results].slice(e.resultIndex).map(r=>r[0].transcript).join('');
+   if(/茄子|拍照|开拍|cheese|chụp/i.test(t)&&Date.now()-vTs>3000&&!rec){vTs=Date.now();$('#shut').click()}};
+  rc.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){S.voice=false;save();toast('没有麦克风或语音权限，声控拍照已关闭')}};
+  rc.onend=()=>{if(S.voice&&!document.hidden&&!rec)try{rc.start()}catch(e){}};rc.start();toast('声控已开启：说“茄子”或“拍照”')}catch(e){S.voice=false;save()}}
+/* 录像：录的是美颜处理后的画面，提词器文字不会被录进去 */
+function recMime(){const L=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];return window.MediaRecorder?(L.find(t=>MediaRecorder.isTypeSupported(t))||''):''}
+async function recStart(){
+ if(!window.MediaRecorder||!cv.captureStream)return toast('这个浏览器不支持录像，请换 Safari 或 Chrome');
+ if(!draw())return toast('相机还没准备好');
+ let mic=null;try{mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})}catch(e){toast('没有麦克风权限，这段视频将没有声音')}
+ const out=cv.captureStream(30);if(mic)mic.getAudioTracks().forEach(t=>out.addTrack(t));micStream=mic;
+ const mt=recMime();recChunks=[];let r;try{r=new MediaRecorder(out,{mimeType:mt||undefined,videoBitsPerSecond:S.q>=1440?9e6:S.q<=720?3e6:6e6})}catch(e){r=new MediaRecorder(out)}
+ r.ondataavailable=e=>{if(e.data&&e.data.size)recChunks.push(e.data)};r.onstop=recDone;rec=r;posterData=poster();r.start(1000);
+ const t0=Date.now();$('#rec').hidden=false;$('#rec').textContent='● 00:00';
+ recTick=setInterval(()=>{const q=Math.floor((Date.now()-t0)/1000);$('#rec').textContent='● '+pad(Math.floor(q/60))+':'+pad(q%60)},500);
+ $('#shut').classList.add('rc');beep(660,.1);setTimeout(()=>beep(990,.12),120);vibe(25);if(tpOn&&S.tpa){tpReset();tpPlay(true)}}
+function recStop(){if(rec){beep(990,.1);setTimeout(()=>beep(660,.12),120)}clearInterval(recTick);$('#rec').hidden=true;$('#shut').classList.remove('rc');tpPlay(false);
+ if(rec&&rec.state!=='inactive')rec.stop();if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}}
+function recDone(){const r=rec;rec=null;const type=((r&&r.mimeType)||recMime()||'video/webm').split(';')[0],bl=new Blob(recChunks,{type});
+ if(bl.size<2000)return toast('录得太短，没有保存');addMedia(bl,'video',type.includes('mp4')?'.mp4':'.webm',posterData);toast('视频已保存到相册')}
+/* 相机模式：拍照 / 视频 / 人像 / 夜景 / 美食，可左右滑动切换 */
+const MO=['p','v','r','n','f','c'],MT={c:'拼图模式：连拍几张，自动拼成一张（版式在“更多”里选）',p:'拍照模式',v:'视频模式：自动改为 9:16 竖屏',r:'人像模式：自动加强磨皮，并虚化背景',n:'夜景模式：拍照时请端稳 1 秒',f:'美食模式：加强色彩和清晰度，不磨皮'};
+function setMode(m){if(rec||cdT||m===mode)return;mode=m;
+ [...$('#mode').children].forEach(x=>x.classList.toggle('on',x.dataset.m===m));$('#shut').classList.toggle('vd',m==='v');
+ if(m==='v'&&S.ratio==='3:4'){S.ratio='9:16';autoR=true;topbar()}else if(m!=='v'&&autoR&&S.ratio==='9:16'){S.ratio='3:4';autoR=false;topbar()}
+ if(m!=='c'&&cells.length){cells=[]}clUI();toast(MT[m]);const b=$('#mode .on');if(b&&b.scrollIntoView)b.scrollIntoView({inline:'center',block:'nearest'})}
+$('#mode').onclick=e=>{const b=e.target.closest('button');if(b)setMode(b.dataset.m)};
+const swipeMode=d=>{const i=MO.indexOf(mode)+d;if(i>=0&&i<MO.length)setMode(MO[i])};
+function eff(){const e=Object.assign({},S);
+ if(mode==='r'){e.sm=Math.max(S.sm,55);e.wh=Math.max(S.wh,30);e.ro=Math.max(S.ro,18);e.bk=Math.max(S.bk,55)}
+ else if(mode==='n'){e.br=Math.min(50,S.br+22);e.sh=Math.min(100,S.sh+10)}
+ else if(mode==='f'){e.sm=0;e.wh=0;e.ro=0;e.sa=Math.min(50,S.sa+25);e.co=Math.min(50,S.co+12);e.sh=Math.min(100,S.sh+20)}
+ return e}
+/* 缩放与滑动：双指缩放，单指左右滑动换模式 */
+let zoom=1,CRP=null;const ptrs=new Map();let sw0=null,pd0=0,z0=1;
+function setZoom(z){zoom=Math.min(5,Math.max(1,z));[...$('#zm').children].forEach(b=>b.classList.toggle('on',Math.abs(+b.dataset.z-zoom)<.25))}
+$('#zm').onclick=e=>{const b=e.target.closest('button');if(b)setZoom(+b.dataset.z)};
+const vw_=$('#view');
+vw_.addEventListener('pointerdown',e=>{if(e.target.closest('#tp,#zm'))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===1)sw0={x:e.clientX,y:e.clientY,t:Date.now()};
+ else if(ptrs.size===2){const [a,b]=[...ptrs.values()];pd0=Math.hypot(a.x-b.x,a.y-b.y);z0=zoom;sw0=null}});
+vw_.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===2&&pd0){const [a,b]=[...ptrs.values()];setZoom(z0*Math.hypot(a.x-b.x,a.y-b.y)/pd0)}});
+const pend=e=>{if(!ptrs.has(e.pointerId))return;const n=ptrs.size;ptrs.delete(e.pointerId);
+ if(n===1&&sw0){const dx=e.clientX-sw0.x,dy=e.clientY-sw0.y,dt=Date.now()-sw0.t;
+  if(Math.abs(dx)>70&&Math.abs(dy)<60&&dt<1000)swipeMode(dx<0?1:-1);
+  else if(Math.abs(dx)<12&&Math.abs(dy)<12&&dt<350)focusAt(e)}
+ if(ptrs.size<2)pd0=0;sw0=null};
+function focusAt(e){const r=cv.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return;
+ const w=$('#cw').getBoundingClientRect(),f=$('#fr');f.style.left=(e.clientX-w.left-30)+'px';f.style.top=(e.clientY-w.top-30)+'px';f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
+ try{const tr=stream&&stream.getVideoTracks()[0],cp=tr&&tr.getCapabilities?tr.getCapabilities():{};
+  if(cp.focusMode||cp.pointsOfInterest){let x=(e.clientX-r.left)/r.width;if(S.mir)x=1-x;tr.applyConstraints({advanced:[{pointsOfInterest:[{x,y:(e.clientY-r.top)/r.height}],focusMode:'single-shot'}]}).catch(()=>{})}}catch(_){}}
+vw_.addEventListener('pointerup',pend);vw_.addEventListener('pointercancel',pend);
+/* 快门声、提示音、震动（用代码合成，不需要音频文件） */
+let AC=null;
+function ac(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function beep(f,d,v){if(!S.snd)return;const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime;o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(v||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+function shutterSound(){if(!S.snd)return;const a=ac();if(!a)return;const t=a.currentTime;
+ [[0,3400],[.07,1900]].forEach(([dt,fq])=>{const n=a.createBuffer(1,Math.floor(a.sampleRate*.045),a.sampleRate),d=n.getChannelData(0);for(let k=0;k<d.length;k++)d[k]=(Math.random()*2-1)*Math.pow(1-k/d.length,3);
+  const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=n;f.type='bandpass';f.frequency.value=fq;f.Q.value=.9;g.gain.value=1.1;s.connect(f);f.connect(g);g.connect(a.destination);s.start(t+dt)})}
+const vibe=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+/* 构图引导：参考线 + 姿势提示 + 自动提示 + 水平仪 */
+const hd=(W,H,cx,cy,s)=>`<ellipse cx="${cx*W}" cy="${cy*H}" rx="${.07*H*s}" ry="${.095*H*s}"/><path d="M${cx*W-.22*H*s} ${H} Q${cx*W-.2*H*s} ${(cy+.2)*H} ${cx*W} ${(cy+.17)*H} Q${cx*W+.2*H*s} ${(cy+.2)*H} ${cx*W+.22*H*s} ${H}"/>`;
+const vv=(W,H,x,y)=>`<path d="M${x*W} ${y*H}L${x*W-.035*H} ${(y-.1)*H}M${x*W} ${y*H}L${x*W+.035*H} ${(y-.1)*H}"/><circle cx="${x*W}" cy="${(y+.035)*H}" r="${.035*H}"/>`;
+const ht=(W,H,x,y)=>{const u=.05*H;return `<path d="M${x*W} ${y*H}C${x*W-u*1.8} ${y*H-u*1.8} ${x*W-u*2.8} ${y*H+u*.4} ${x*W} ${y*H+u*2}C${x*W+u*2.8} ${y*H+u*.4} ${x*W+u*1.8} ${y*H-u*1.8} ${x*W} ${y*H}Z"/>`};
+const PO=[
+ ['三分构图','脸放在左边三分线上，眼睛对准上方横线',(W,H)=>hd(W,H,.333,.33,1),[.333,.4]],
+ ['居中半身','脸在中间偏上，肩膀放平，头顶留一点空',(W,H)=>hd(W,H,.5,.36,1.05),[.5,.42]],
+ ['剪刀手','脸在左边三分线上，剪刀手举到右下角交点，靠近脸',(W,H)=>hd(W,H,.36,.33,1)+vv(W,H,.68,.6),[.5,.45]],
+ ['托腮','脸偏右，手轻托下巴，眼睛看镜头',(W,H)=>hd(W,H,.55,.36,1)+`<circle cx="${.55*W}" cy="${.53*H}" r="${.04*H}"/>`,[.55,.45]],
+ ['比心','脸在左边，双手在右下方比心',(W,H)=>hd(W,H,.36,.33,1)+ht(W,H,.7,.6),[.5,.45]],
+ ['侧身回头','身体侧一点，头转回来看镜头，肩线微微倾斜',(W,H)=>`<ellipse cx="${.42*W}" cy="${.32*H}" rx="${.07*H}" ry="${.095*H}" transform="rotate(-12 ${.42*W} ${.32*H})"/><path d="M${.12*W} ${H}Q${.2*W} ${.6*H} ${.5*W} ${.5*H}Q${.85*W} ${.46*H} ${.95*W} ${.62*H}"/>`,[.45,.42]],
+ ['双人合影','两个人的脸分别在左右三分线上，肩膀靠近',(W,H)=>hd(W,H,.33,.36,.9)+hd(W,H,.67,.38,.9),[.5,.45]],
+ ['全身站姿','头顶留 1/6，脚在画面底部，手机放低一点',(W,H)=>`<circle cx="${.5*W}" cy="${.2*H}" r="${.055*H}"/><path d="M${.5*W} ${.26*H}L${.5*W} ${.55*H}M${.5*W} ${.33*H}L${.36*W} ${.46*H}M${.5*W} ${.33*H}L${.64*W} ${.46*H}M${.5*W} ${.55*H}L${.4*W} ${.92*H}M${.5*W} ${.55*H}L${.6*W} ${.92*H}"/>`,[.5,.4]],
+ ['美食俯拍','手机和桌面保持平行（打开水平仪），食物放在圆圈里',(W,H)=>`<circle cx="${.5*W}" cy="${.5*H}" r="${.3*H}"/><circle cx="${.5*W}" cy="${.5*H}" r="${.2*H}"/>`,null]
+];
+function gdr(){
+ const W=cv.width/cv.height*400,H=400,g=$('#gd'),ln=(a,b,c,d)=>`M${a} ${b}L${c} ${d}`;let l='';
+ if(S.grid===1)l=ln(W/3,0,W/3,H)+ln(W*2/3,0,W*2/3,H)+ln(0,H/3,W,H/3)+ln(0,H*2/3,W,H*2/3);
+ else if(S.grid===2)l=ln(0,0,W,H)+ln(W,0,0,H)+ln(W/2,0,W/2,H)+ln(0,H/2,W,H/2);
+ else if(S.grid===3)l=ln(W*.382,0,W*.382,H)+ln(W*.618,0,W*.618,H)+ln(0,H*.382,W,H*.382)+ln(0,H*.618,W,H*.618);
+ else if(S.grid===4)l=ln(W/2,0,W/2,H)+ln(0,H/2,W,H/2);
+ let h=l?`<path d="${l}" stroke="#fff" stroke-opacity=".55" stroke-width="1" fill="none" vector-effect="non-scaling-stroke"/>`:'';
+ if(S.gd>=0&&PO[S.gd])h+=`<g fill="none" stroke="#2ee6c5" stroke-width="2.2" stroke-dasharray="7 5" stroke-linecap="round" vector-effect="non-scaling-stroke">${PO[S.gd][2](W,H)}</g>`;
+ if(S.fr)frameParts(W,H).forEach(([d,f,r])=>{h+=`<path d="${d}" fill="${f}" fill-rule="${r||'nonzero'}" fill-opacity=".92"/>`});
+ g.setAttribute('viewBox',`0 0 ${W} ${H}`);g.innerHTML=h;
+ const t=$('#tipb');t.hidden=!(S.gd>=0&&PO[S.gd]);if(!t.hidden)t.textContent='💡 '+PO[S.gd][1]}
+const sc_=document.createElement('canvas'),sg_=sc_.getContext('2d',{willReadFrequently:true});let roll=0,flat=false;
+function hintSet(m,ok){const e=$('#hint');e.hidden=!m;e.textContent=m;e.classList.toggle('ok',!!ok)}
+function analyze(){
+ if(!S.auto||!CRP||vid.readyState<2||document.hidden)return;
+ const a=CRP.cw/CRP.ch,w=48,h=Math.max(8,Math.round(48/a));sc_.width=w;sc_.height=h;sg_.drawImage(vid,CRP.cx,CRP.cy,CRP.cw,CRP.ch,0,0,w,h);
+ const d=sg_.getImageData(0,0,w,h).data,xs=[],ys=[];let L=0;
+ for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2],y=.299*r+.587*g+.114*b;L+=y;const cb=128-.168736*r-.331264*g+.5*b,cr=128+.5*r-.418688*g-.081312*b;
+  if(cb>77&&cb<127&&cr>133&&cr<173&&y>50){const p=i/4;xs.push(p%w);ys.push((p/w)|0)}}
+ L/=d.length/4;const N=xs.length;let m='',ok=false;
+ if(L<45)m='光线偏暗，试试打开补光，或换到亮一点的地方';
+ else if(L>215)m='光线太亮，可能过曝，避开直射光';
+ else if(S.lvl&&Math.abs(roll)>3)m='手机没拿平，转一转让水平线变绿';
+ else if(mode!=='f'){
+  if(N<w*h*.008)m='没找到人脸，请把人物放进画面';
+  else{let mx=0,my=0;for(let i=0;i<N;i++){mx+=xs[i];my+=ys[i]}mx/=N;my/=N;let sx=0,sy=0;for(let i=0;i<N;i++){sx+=(xs[i]-mx)**2;sy+=(ys[i]-my)**2}
+   const bh=Math.sqrt(sy/N)*4/h;let fx=mx/w;if(S.mir)fx=1-fx;const fy=my/h,tg=(S.gd>=0&&PO[S.gd]&&PO[S.gd][3])||[.5,.42];
+   if(bh>.72)m='离太近了，退后一点';else if(bh<.1)m='离远了，走近一点';
+   else if(fx-tg[0]>.15)m='人物偏右，手机往右转一点';else if(tg[0]-fx>.15)m='人物偏左，手机往左转一点';
+   else if(fy-tg[1]>.17)m='人物偏下，手机往下压一点';else if(tg[1]-fy>.17)m='人物偏上，手机往上抬一点';
+   else{m='构图不错，可以拍了 👍';ok=true}}}
+ hintSet(m,ok)}
+setInterval(analyze,500);
+function motion(e){const g=e.accelerationIncludingGravity;if(!g||g.x==null||!S.lvl)return;
+ const k=/iP(hone|ad)/.test(navigator.userAgent)?-1:1,x=g.x*k,y=g.y*k,z=g.z*k;flat=Math.abs(z)>8;
+ roll=flat?Math.atan2(Math.hypot(x,y),Math.abs(z))*57.3:Math.atan2(x,y)*57.3;
+ const ok=Math.abs(roll)<1.5,l=$('#lvl');l.hidden=false;l.classList.toggle('ok',ok);l.querySelector('i').style.transform=flat?'none':`rotate(${S.mir?-roll:roll}deg)`;l.querySelector('b').textContent=ok?'已水平':(flat?'俯拍：':'')+'倾斜 '+Math.abs(roll).toFixed(1)+'°'}
+async function togLvl(){
+ if(S.lvl){S.lvl=false;removeEventListener('devicemotion',motion);$('#lvl').hidden=true;panel();return}
+ try{if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted')return toast('没有允许“运动与方向”权限，水平仪用不了。请到 设置→Safari 里打开')}}catch(e){return toast('这台手机不能用水平仪')}
+ S.lvl=true;addEventListener('devicemotion',motion);toast('水平仪已打开：线变绿就是拿平了');panel()}
+let cdT=0;
+
+$('#shut').onclick=()=>{
+ if(cdT){clearInterval(cdT);cdT=0;$('#cd').textContent='';return}
+ if(burstOn)return;
+ if(rec)return recStop();
+ const run=mode==='v'?recStart:mode==='c'?collageShot:snap;if(!S.timer)return run();
+ let n=S.timer;$('#cd').textContent=n;
+ cdT=setInterval(()=>{n--;if(n>0){$('#cd').textContent=n;beep(880,.08)}else{clearInterval(cdT);cdT=0;$('#cd').textContent='';run()}},1000)};
+/* 相册 */
+let gsel=null;
+function gal(){$('#gg').innerHTML=photos.slice().reverse().map(p=>`<div data-id="${p.id}" class="${gsel&&gsel.has(p.id)?'sel':''}" style="background-image:url(${p.poster||p.url})">${p.type==='video'?'<i>▶</i>':''}</div>`).join('')||'<p style="grid-column:1/-1;text-align:center;color:var(--mu);padding:40px">还没有照片或视频</p>';
+ $('#gs').textContent=gsel?'取消选择':'选择';$('#gbar').hidden=!gsel;$('#gal').hidden=false}
+$('#gs').onclick=()=>{gsel=gsel?null:new Set();gal()};
+$('#gsv').onclick=async()=>{if(!gsel||!gsel.size)return toast('先点选要保存的照片');const fs=photos.filter(p=>gsel.has(p.id)).map(p=>new File([p.blob],p.name,{type:p.blob.type}));
+ if(navigator.canShare&&navigator.canShare({files:fs})){try{await navigator.share({files:fs})}catch(e){if(e&&e.name!=='AbortError')toast('保存失败')}}else toast('这里不能一键存相册，请逐张打开后点“下载”')};
+$('#gdl').onclick=()=>{if(!gsel||!gsel.size)return toast('先点选要删除的文件');if(!confirm('删除选中的 '+gsel.size+' 个文件？'))return;
+ photos=photos.filter(p=>{if(gsel.has(p.id)){tx('readwrite',s=>s.delete(p.id));URL.revokeObjectURL(p.url);return false}return true});gsel=null;thumb();gal()};
+$('#thumb').onclick=()=>{gsel=null;gal()};$('#gx').onclick=()=>{gsel=null;$('#gal').hidden=true};
+$('#gg').onclick=e=>{const d=e.target.closest('[data-id]');if(!d)return;
+ if(gsel){const id=+d.dataset.id;gsel.has(id)?gsel.delete(id):gsel.add(id);gal();return}
+ cur=photos.find(p=>p.id==d.dataset.id);const v=cur.type==='video';
+ $('#vw img').hidden=v;$('#vv').hidden=!v;if(v)$('#vv').src=cur.url;else $('#vw img').src=cur.url;$('#vw').hidden=false};
+function vclose(){const v=$('#vv');v.pause();v.removeAttribute('src');v.load();$('#vw').hidden=true}
+$('#vc').onclick=vclose;
+$('#vs').onclick=async()=>{const f=new File([cur.blob],cur.name,{type:cur.blob.type||'image/jpeg'});
+ if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(e&&e.name!=='AbortError')toast('保存失败，请点“下载”')}}
+ else toast('这里不能一键存相册，请点“下载”，或长按图片选“添加到照片”')};
+$('#vd').onclick=()=>{const a=document.createElement('a');a.href=cur.url;a.download=cur.name;document.body.append(a);a.click();a.remove()};
+$('#vr').onclick=()=>{if(!confirm('删除这个文件？'))return;photos=photos.filter(p=>p!==cur);tx('readwrite',s=>s.delete(cur.id));URL.revokeObjectURL(cur.url);vclose();thumb();gal()};
+/* 补光灯：后置镜头用手机闪光灯（部分手机支持），前置镜头用屏幕发光 */
+const FC=[[255,255,255],[255,217,168],[255,196,214],[207,228,255]];
+function fillApply(say){
+ const tr=stream&&stream.getVideoTracks()[0],cap=tr&&tr.getCapabilities?tr.getCapabilities():{},hasT=!!cap.torch;let torch=false;
+ if(hasT){torch=fillOn&&S.facing==='environment';tr.applyConstraints({advanced:[{torch}]}).catch(()=>{})}
+ const scr=fillOn&&!torch,c=FC[S.fc].map(v=>Math.round(v*S.fb/100)),v=$('#view');
+ v.style.background=scr?`rgb(${c})`:'';v.classList.toggle('lit',scr);fit();$('#fillb').classList.toggle('on',fillOn);
+ if(say&&fillOn)toast(torch?'已打开手机闪光灯':S.facing==='environment'?'这台手机的后置镜头不能开闪光灯，已改用屏幕补光':'已打开屏幕补光，亮度和颜色在“补光”页调')}
+$('#fillb').onclick=()=>{fillOn=!fillOn;fillApply(true);if(pt==='l')panel()};
+async function wake(){try{if(navigator.wakeLock&&!document.hidden)wl=await navigator.wakeLock.request('screen')}catch(e){}}
+/* 提词器 */
+let tpOn=false,tpRun=false,tpY=0,tpLast=0,tpRaf=0,tpD=null;
+function tpLayout(){const t=$('#tp');t.style.height=S.tph+'%';t.style.background=`rgba(0,0,0,${S.tpb/100})`;const x=$('#tpt');x.style.fontSize=S.tpz+'px';x.textContent=S.tpx||'点“编辑文稿”，输入或粘贴你的台词'}
+function tpApply(){$('#tpt').style.transform=`translateY(${tpY}px) scaleX(${S.tpm?-1:1})`}
+function tpReset(){tpY=$('#tp').clientHeight*.38;tpApply()}
+function tpPlay(on){tpRun=on&&tpOn;$('#tpp').textContent=tpRun?'暂停':'开始';cancelAnimationFrame(tpRaf);
+ if(tpRun){tpLast=performance.now();const f=t=>{tpY-=S.tps*(t-tpLast)/1000;tpLast=t;tpApply();
+  if(tpY+$('#tpt').offsetHeight<$('#tp').clientHeight*.38){tpPlay(false);return}tpRaf=requestAnimationFrame(f)};tpRaf=requestAnimationFrame(f)}}
+function tpShow(on){tpOn=on;$('#tp').hidden=!on;$('#tpb').classList.toggle('on',on);if(on){tpLayout();tpReset();if(!S.tpx)openTed()}else tpPlay(false)}
+$('#tpb').onclick=()=>{tpShow(!tpOn);if(pt==='t')panel()};
+$('#tp').onpointerdown=e=>{if(e.target.closest('#tpc'))return;tpD={y:e.clientY,y0:tpY,m:false};$('#tp').setPointerCapture(e.pointerId)};
+$('#tp').onpointermove=e=>{if(!tpD)return;const dy=e.clientY-tpD.y;if(Math.abs(dy)>4)tpD.m=true;if(tpD.m){tpY=tpD.y0+dy;tpApply()}};
+$('#tp').onpointerup=()=>{if(tpD&&!tpD.m)tpPlay(!tpRun);tpD=null};
+$('#tpc').onclick=e=>{const c=e.target.dataset.c;if(!c)return;
+ if(c==='r'){tpReset();tpPlay(false)}else if(c==='p')tpPlay(!tpRun);
+ else if(c==='-'||c==='+'){S.tps=Math.min(200,Math.max(5,S.tps+(c==='+'?8:-8)));save();toast('速度 '+S.tps);if(pt==='t')panel()}
+ else if(c==='x'){tpShow(false);if(pt==='t')panel()}};
+function openTed(){$('#tex').value=S.tpx;$('#ted').hidden=false;$('#tex').focus()}
+$('#tok').onclick=()=>{S.tpx=$('#tex').value;save();$('#ted').hidden=true;tpLayout();if(S.tpx.trim()&&!tpOn)tpShow(true);else tpReset();if(pt==='t')panel()};
+
+/* ---------- 启动 ---------- */
+const qt=+new URLSearchParams(location.search).get('tab')||0;document.documentElement.style.setProperty('--tab',qt+'px');
+window.Cam={start,stop,photos:()=>photos.map(p=>({name:p.name,blob:p.blob}))};
+topbar();panel();if(S.voice)setTimeout(()=>voice(true),1500);
+if(!localStorage.getItem('cam_tip')){try{localStorage.setItem('cam_tip','1')}catch(e){}setTimeout(()=>toast('左右滑动换模式 · 双指缩放 · 点画面对焦'),1800);setTimeout(()=>toast('长按快门连拍 · 底部“引导”里有姿势参考'),5200)}
+(async()=>{try{const a=await tx('readonly',s=>s.getAll());photos=(a||[]).sort((x,y)=>x.t-y.t).map(p=>({...p,type:p.type||'photo',url:URL.createObjectURL(p.blob)}));thumb()}catch(e){}
+ start()})();
+</script></body></html>
